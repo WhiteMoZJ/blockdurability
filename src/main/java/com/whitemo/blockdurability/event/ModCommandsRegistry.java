@@ -15,16 +15,16 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = BlockDurabilityMod.MOD_ID)
 public class ModCommandsRegistry {
-    // 指令根节点：/blockdurability （可缩写为/bd）
+    // command root: /bd
     private static final String ROOT_CMD = "blockdurability";
     private static final String ALIAS_CMD = "bd";
 
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
-        // 主指令注册
+        // main command
         var rootCommand = Commands.literal(ROOT_CMD)
-                .requires(source -> source.hasPermission(2)) // OP等级2以上可使用
-                // 设置耐久子命令：/bd set <x> <y> <z> <耐久值>
+                .requires(source -> source.hasPermission(2)) // OP level 2 required
+                // set durability subcommand: /bd set <x> <y> <z> <durability>
                 .then(Commands.literal("set")
                         .then(Commands.argument("pos", BlockPosArgument.blockPos())
                                 .then(Commands.argument("durability", IntegerArgumentType.integer(-1))
@@ -34,19 +34,24 @@ public class ModCommandsRegistry {
                                             ServerLevel level = context.getSource().getLevel();
                                             DurabilityDataManager data = DurabilityDataManager.get(level);
 
-                                            data.setDurability(pos, durability);
-                                            String msg = durability == -1
-                                                    ? "已设置坐标 [%s, %s, %s] 为不可破坏"
-                                                    : "已设置坐标 [%s, %s, %s] 的方块耐久为 %s";
-                                            context.getSource().sendSuccess(() -> Component.literal(
-                                                    String.format(msg, pos.getX(), pos.getY(), pos.getZ(), durability)
-                                            ), true);
+                                            if (data.setDurability(pos, durability)) {
+                                                String key = durability == -1
+                                                        ? "command.blockdurability.set.unbreakable"
+                                                        : "command.blockdurability.set.success";
+                                                context.getSource().sendSuccess(() -> Component.translatable(
+                                                    key, pos.getX(), pos.getY(), pos.getZ(), durability
+                                                ), true);
+                                                } else {
+                                                    context.getSource().sendFailure(Component.translatable(
+                                                            "command.blockdurability.set.failed", pos.getX(), pos.getY(), pos.getZ()
+                                                    ));
+                                                }
                                             return 1;
                                         })
                                 )
                         )
                 )
-                // 删除设置子命令：/bd remove <x> <y> <z>
+                // remove custom durability setting subcommand: /bd remove <x> <y> <z>
                 .then(Commands.literal("remove")
                         .then(Commands.argument("pos", BlockPosArgument.blockPos())
                                 .executes(context -> {
@@ -54,15 +59,20 @@ public class ModCommandsRegistry {
                                     ServerLevel level = context.getSource().getLevel();
                                     DurabilityDataManager data = DurabilityDataManager.get(level);
 
-                                    data.removeDurability(pos);
-                                    context.getSource().sendSuccess(() -> Component.literal(
-                                            String.format("已删除坐标 [%s, %s, %s] 的自定义耐久设置", pos.getX(), pos.getY(), pos.getZ())
-                                    ), true);
+                                    if (data.removeDurability(pos)) {
+                                        context.getSource().sendSuccess(() -> Component.translatable(
+                                                "command.blockdurability.remove.success", pos.getX(), pos.getY(), pos.getZ()
+                                        ), true);
+                                    } else {
+                                        context.getSource().sendFailure(Component.translatable(
+                                                "command.blockdurability.remove.failed", pos.getX(), pos.getY(), pos.getZ()
+                                        ));
+                                    }
                                     return 1;
                                 })
                         )
                 )
-                // 查询设置子命令：/bd get <x> <y> <z>
+                // get custom durability setting subcommand: /bd get <x> <y> <z>
                 .then(Commands.literal("get")
                         .then(Commands.argument("pos", BlockPosArgument.blockPos())
                                 .executes(context -> {
@@ -71,19 +81,19 @@ public class ModCommandsRegistry {
                                     DurabilityDataManager data = DurabilityDataManager.get(level);
                                     Integer durability = data.getDurability(pos);
 
-                                    String msg = durability == null
-                                            ? "坐标 [%s, %s, %s] 无自定义耐久设置，使用原版属性"
+                                    String key = durability == null
+                                            ? "command.blockdurability.get.none"
                                             : durability == -1
-                                            ? "坐标 [%s, %s, %s] 已设置为不可破坏"
-                                            : "坐标 [%s, %s, %s] 的自定义耐久为 %s";
-                                    context.getSource().sendSuccess(() -> Component.literal(
-                                            String.format(msg, pos.getX(), pos.getY(), pos.getZ(), durability)
+                                            ? "command.blockdurability.get.unbreakable"
+                                            : "command.blockdurability.get.custom";
+                                    context.getSource().sendSuccess(() -> Component.translatable(
+                                            key, pos.getX(), pos.getY(), pos.getZ(), durability
                                     ), false);
                                     return 1;
                                 })
                         )
                 )
-                // 对角线批量设置耐久：/bd set <pos1> <pos2> <耐久值>
+                // set custom durability setting for a diagonal area subcommand: /bd set <pos1> <pos2> <durability>
                 .then(Commands.literal("set")
                         .then(Commands.argument("pos1", BlockPosArgument.blockPos())
                                 .then(Commands.argument("pos2", BlockPosArgument.blockPos())
@@ -101,24 +111,32 @@ public class ModCommandsRegistry {
                                                     int minZ = Math.min(pos1.getZ(), pos2.getZ());
                                                     int maxZ = Math.max(pos1.getZ(), pos2.getZ());
 
-                                                    // 遍历选区内所有方块（高效遍历，避免卡顿）
-                                                    int count = 0;
+                                                    // scan all blocks in the area
+                                                    final int[] count = {0};
                                                     for (int x = minX; x <= maxX; x++) {
                                                         for (int y = minY; y <= maxY; y++) {
                                                             for (int z = minZ; z <= maxZ; z++) {
                                                                 BlockPos currentPos = new BlockPos(x, y, z);
-                                                                data.setDurability(currentPos, durability);
-                                                                count++;
+                                                                if (data.setDurability(currentPos, durability)) {
+                                                                    count[0]++;
+                                                                }
                                                             }
                                                         }
                                                     }
+                                                    // send success message
+                                                    String key = durability == -1
+                                                            ? "command.blockdurability.set.unbreakable.area"
+                                                            : "command.blockdurability.set.custom.area";
+                                                    context.getSource().sendSuccess(() -> Component.translatable(
+                                                            key, pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ(), durability, count[0]
+                                                    ), true);
                                                     return 1;
                                                 })
                                         )
                                 )
                         )
                 )
-                // 对角线批量删除耐久：/bd diagonal remove <pos1> <pos2>
+                // remove custom durability setting for a diagonal area subcommand: /bd diagonal remove <pos1> <pos2>
                 .then(Commands.literal("remove")
                         .then(Commands.argument("pos1", BlockPosArgument.blockPos())
                                 .then(Commands.argument("pos2", BlockPosArgument.blockPos())
@@ -134,17 +152,22 @@ public class ModCommandsRegistry {
                                                 int minZ = Math.min(pos1.getZ(), pos2.getZ());
                                                 int maxZ = Math.max(pos1.getZ(), pos2.getZ());
 
-                                                // 遍历选区内所有方块（高效遍历，避免卡顿）
-                                                int count = 0;
+                                                // scan all blocks in the area
+                                                final int[] count = {0};
                                                 for (int x = minX; x <= maxX; x++) {
                                                     for (int y = minY; y <= maxY; y++) {
                                                         for (int z = minZ; z <= maxZ; z++) {
                                                             BlockPos currentPos = new BlockPos(x, y, z);
-                                                            data.removeDurability(currentPos);
-                                                            count++;
+                                                            if (data.removeDurability(currentPos)) {
+                                                                count[0]++;
+                                                            }
                                                         }
                                                     }
                                                 }
+                                                // send success message
+                                                context.getSource().sendSuccess(() -> Component.translatable(
+                                                        "command.blockdurability.remove.area.success", pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ(), count[0]
+                                                ), true);
                                                 return 1;
                                             })
                                     )
@@ -158,14 +181,13 @@ public class ModCommandsRegistry {
                                             boolean targetState = BoolArgumentType.getBool(context, "state"); // 获取true/false参数
                                             ModClientConfig.VISUAL_ENABLED.set(targetState);
                                             ModClientConfig.SPEC.save();
-                                            context.getSource().sendSuccess(() -> Component.literal(
-                                                    targetState ? "已开启方块保护可视化" : "已关闭方块保护可视化"
-                                            ), true);
+                                            String key = targetState ? "command.blockdurability.visual.toggle.on" : "command.blockdurability.visual.toggle.off";
+                                            context.getSource().sendSuccess(() -> Component.translatable(key), true);
                                             return 1;
                                         })
                                 )
                         )
-                        // 设置渲染范围
+                        // set visualization render range subcommand: /bd visual range <range>
                         .then(Commands.literal("range")
                                 .then(Commands.argument("range", IntegerArgumentType.integer(1, 64))
                                         .executes(context -> {
@@ -179,21 +201,22 @@ public class ModCommandsRegistry {
                                         })
                                 )
                         )
-                        // 切换仅手持木棍显示
+                        // toggle visualization display only with stick subcommand: /bd visual stick
                         .then(Commands.literal("stick")
-                                .executes(context -> {
-                                    boolean newState = !ModClientConfig.ONLY_SHOW_WITH_STICK.get();
-                                    ModClientConfig.ONLY_SHOW_WITH_STICK.set(newState);
-                                    ModClientConfig.SPEC.save();
-                                    context.getSource().sendSuccess(() -> Component.literal(
-                                            newState ? "已开启仅手持木棍时显示可视化" : "已关闭仅手持木棍显示限制"
-                                    ), true);
-                                    return 1;
-                                })
+                                .then(Commands.argument("state", BoolArgumentType.bool())
+                                        .executes(context -> {
+                                        boolean targetState = BoolArgumentType.getBool(context, "state");
+                                        ModClientConfig.ONLY_SHOW_WITH_STICK.set(targetState);
+                                        ModClientConfig.SPEC.save();
+                                        String key = targetState ? "command.blockdurability.visual.stick.on" : "command.blockdurability.visual.stick.off";
+                                        context.getSource().sendSuccess(() -> Component.translatable(key), true);
+                                        return 1;
+                                        })
+                                )
                         )
                 )
                 .build();
-        // 注册主指令和别名
+        // register main command
         event.getDispatcher().register(Commands.literal(ALIAS_CMD).redirect(rootCommand));
     }
 }

@@ -10,6 +10,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.BlockState;
@@ -34,16 +35,17 @@ public class BlockHighlightRenderer {
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
         Minecraft mc = Minecraft.getInstance();
 
-        // 仅在实体渲染后执行，保证层级正确
+        // Only execute after entity rendering to ensure correct layer order
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
 
         Player player = mc.player;
         Camera camera = event.getCamera();
         Vec3 cameraPos = camera.getPosition();
 
-        // 基础开关判断
+        // Basic switch judgment
         if (mc.isPaused() || player == null || mc.level == null || !ModClientConfig.VISUAL_ENABLED.get()) return;
-        // 仅手持木棍时显示的判断
+
+        // Only show when holding a stick
         if (ModClientConfig.ONLY_SHOW_WITH_STICK.get() && !player.getMainHandItem().is(Items.STICK)) return;
 
         Map<BlockPos, Integer> data = ClientDurabilityCache.getAllData();
@@ -59,7 +61,7 @@ public class BlockHighlightRenderer {
 
         MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
 
-        // 渲染状态设置
+        // Render state settings
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableDepthTest();
@@ -68,74 +70,77 @@ public class BlockHighlightRenderer {
             RenderSystem.disableDepthTest();
         }
 
-        // 遍历所有保护方块，渲染范围内的内容
+        // Traverse all protected blocks, render only those within the render range
         for (Map.Entry<BlockPos, Integer> entry : data.entrySet()) {
             BlockPos pos = entry.getKey();
             int durability = entry.getValue();
 
-            // 超出渲染范围跳过
+            // Skip if outside render range
             if (!pos.closerToCenterThan(player.position(), renderRange)) continue;
 
-            // 获取方块状态，保证渲染的轮廓和方块实际形状完全一致
+            // Get block state to ensure consistent outline rendering
             BlockState blockState = mc.level.getBlockState(pos);
-            // 空方块跳过渲染
+            // Skip rendering if the block is air
             if (blockState.isAir()) continue;
 
-            // 获取方块的碰撞箱（兼容不规则方块：楼梯、栅栏等）
+            // Get block collision box (compatible with irregular blocks: stairs, fences, etc.)
             AABB blockBox = blockState.getShape(mc.level, pos).bounds().move(pos);
-            // 应用原版偏移，避免和方块重叠
+
+            // Apply original offset to avoid overlap with the block
             AABB outlineBox = blockBox.inflate(OUTLINE_OFFSET);
 
-            // 获取颜色配置
+            // Get color configuration
             int[] color;
             if (durability == -1) {
-                // 创造模式玩家看到的不可破坏方块改为黄色，生存模式保持红色
-                color = ModClientConfig.getColorArray(ModClientConfig.UNBREAKABLE_COLOR); // 解析配置字符串
+                // In creative mode, unbreakable blocks are yellow; in survival mode, they are red
+                color = ModClientConfig.getColorArray(ModClientConfig.UNBREAKABLE_COLOR); // Parse color string
             } else {
-                color = ModClientConfig.getColorArray(ModClientConfig.CUSTOM_DURABILITY_COLOR); // 解析配置字符串
+                color = ModClientConfig.getColorArray(ModClientConfig.CUSTOM_DURABILITY_COLOR); // Parse color string
             }
             float r = color[0] / 255f;
             float g = color[1] / 255f;
             float b = color[2] / 255f;
             float a = 0.9f;
 
-            // 渲染线框
             // renderBlockOutline(poseStack, bufferSource, outlineBox, r, g, b, a);
 
-            // 2. 渲染耐久悬浮文本
+            // Render durability text above the block
             if (ModClientConfig.SHOW_DURABILITY_TEXT.get()) {
                 renderDurabilityText(poseStack, bufferSource, pos, durability, camera, r, g, b);
             }
         }
 
         bufferSource.endBatch(RenderType.lines());
-        RenderSystem.lineWidth(1.0f); // 还原默认线宽
-        RenderSystem.enableDepthTest(); // 还原深度测试
+        RenderSystem.lineWidth(1.0f); // Restore default line width
+        RenderSystem.enableDepthTest(); // Restore depth test
         RenderSystem.disableBlend();
         poseStack.popPose();
     }
 
-    // 渲染方块上方的耐久文本
+    // Render durability text above block
     private static void renderDurabilityText(PoseStack poseStack, MultiBufferSource bufferSource,
                                              BlockPos pos, int durability, Camera camera,
                                              float r, float g, float b) {
-        Vec3 textPos = Vec3.atCenterOf(pos).add(0, 0.6, 0); // 方块中心上方
-        String text = durability == -1 ? "不可破坏" : "耐久: " + durability;
+        Vec3 textPos = Vec3.atCenterOf(pos).add(0, 0.6, 0); // Above the block center
+        String key = durability == -1 ? "blockdurability.text.unbreakable" : "blockdurability.text.durability";
+        String text = durability == -1 
+                ? Component.translatable(key).getString()
+                : Component.translatable(key, durability).getString();
         float scale = ModClientConfig.TEXT_SCALE.get().floatValue();
 
         poseStack.pushPose();
         poseStack.translate(textPos.x, textPos.y, textPos.z);
-        // 文本始终面向玩家（billboard效果）
+        // Text always faces the player (billboard effect)
         poseStack.mulPose(camera.rotation());
-        // 翻转Y轴，避免文字倒置
+        // Flip Y axis to avoid text being upside down
         poseStack.scale(-scale, -scale, scale);
 
         Minecraft mc = Minecraft.getInstance();
         int textWidth = mc.font.width(text);
-        // 居中渲染
+        // Centered rendering
         float xOffset = -textWidth / 2f;
 
-        // 渲染文本（带背景，更清晰）
+        // Render text (with background for better visibility)
         mc.font.drawInBatch(
                 text,
                 xOffset,
@@ -145,8 +150,8 @@ public class BlockHighlightRenderer {
                 poseStack.last().pose(),
                 bufferSource,
                 Font.DisplayMode.SEE_THROUGH,
-                0x50000000, // 背景透明度
-                15728880, // 光照等级
+                0x50000000, // Background transparency
+                15728880, // Light level
                 false
         );
 

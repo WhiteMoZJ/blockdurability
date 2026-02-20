@@ -20,7 +20,7 @@ import java.util.Objects;
 @Mod.EventBusSubscriber(modid = BlockDurabilityMod.MOD_ID)
 public class BlockProtectEvents {
 
-    // 拦截方块破坏事件（核心：阻止不可破坏方块被玩家挖掉）
+    // block break event
     @SubscribeEvent
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
         if (event.getLevel().isClientSide()) return; // 仅服务端处理
@@ -30,29 +30,27 @@ public class BlockProtectEvents {
         DurabilityDataManager data = DurabilityDataManager.get(level);
         Player player = event.getPlayer();
 
-        // 核心修改：创造模式玩家直接放行，不拦截
+        // available player creative mode block break event
         if (player != null && player.isCreative()) {
-            // 可选：创造模式破坏后自动删除自定义设置（和原版逻辑一致）
             if (data.getDurability(pos) != null) {
                 data.removeDurability(pos);
             }
-            return; // 创造模式不拦截
+            return;
         }
 
-        // 不可破坏方块直接取消破坏
+        // unbreakable block break event
         if (data.isUnbreakable(pos)) {
             event.setCanceled(true);
             return;
         }
 
-        // 可选：方块被成功破坏后删除自定义设置（不需要可注释掉）
+        // optional: remove custom durability after block break
         Integer durability = data.getDurability(pos);
         if (durability != null && !event.isCanceled()) {
             data.removeDurability(pos);
         }
     }
 
-    // 2. 修改挖掘速度（自定义耐久生效，和原版硬度逻辑一致）
     @SubscribeEvent
     public static void onBreakSpeed(PlayerEvent.BreakSpeed event) {
         if (event.getEntity().level().isClientSide()) return;
@@ -83,7 +81,7 @@ public class BlockProtectEvents {
         ServerLevel level = (ServerLevel) event.getLevel();
         DurabilityDataManager data = DurabilityDataManager.get(level);
 
-        // 从爆炸影响列表中移除所有不可破坏的方块
+        // remove unbreakable block from explosion affect list
         event.getAffectedBlocks().removeIf(pos -> data.isUnbreakable(pos));
     }
 
@@ -95,7 +93,7 @@ public class BlockProtectEvents {
         DurabilityDataManager data = DurabilityDataManager.get(level);
         BlockPos targetPos = event.getPos();
 
-        // 活塞要推动的方块是不可破坏的，直接取消活塞动作
+        // cancel piston push if target block is unbreakable
         if (data.isUnbreakable(targetPos)) {
             event.setCanceled(true);
         }

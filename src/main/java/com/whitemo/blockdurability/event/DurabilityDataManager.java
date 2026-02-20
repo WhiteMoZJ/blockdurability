@@ -16,10 +16,10 @@ import java.util.Map;
 
 public class DurabilityDataManager extends SavedData {
     private static final String DATA_NAME = BlockDurabilityMod.MOD_ID + "_block_data";
-    // 核心存储：坐标 -> 自定义硬度（-1=不可破坏，null=使用原版硬度）
+    // core data: pos -> durability (-1=unbreakable, null=use default hardness)
     private static final Map<BlockPos, Integer> durabilityMap = new HashMap<>();
 
-    // 获取当前世界的实例
+    // get instance of current world
     private ServerLevel level;
 
     public static DurabilityDataManager get(ServerLevel level) {
@@ -33,7 +33,7 @@ public class DurabilityDataManager extends SavedData {
         return data;
     }
 
-    // 从NBT加载数据
+    // load data from NBT
     public static DurabilityDataManager load(CompoundTag tag) {
         DurabilityDataManager data = new DurabilityDataManager();
         ListTag list = tag.getList("BlockDurabilityList", CompoundTag.TAG_COMPOUND);
@@ -46,7 +46,7 @@ public class DurabilityDataManager extends SavedData {
         return data;
     }
 
-    // 保存数据到NBT
+    // save data to NBT
     @Override
     public @NotNull CompoundTag save(@NotNull CompoundTag tag) {
         ListTag list = new ListTag();
@@ -60,31 +60,32 @@ public class DurabilityDataManager extends SavedData {
         return tag;
     }
 
-    // 设置坐标的耐久值
-    public void setDurability(BlockPos pos, int durability) {
+    // set durability of block at pos
+    public boolean setDurability(BlockPos pos, int durability) {
         BlockState blockState = level.getBlockState(pos);
         if (blockState == Blocks.AIR.defaultBlockState()) {
-            return;
+            return false;
         }
 
         durabilityMap.put(pos, durability);
-        setDirty(); // 标记需要保存
+        setDirty();
 
         if (this.level != null) {
             NetworkHandler.syncUpdateToDimension(this.level, pos, durability);
         }
+        return true;
     }
 
-    // 获取坐标的耐久值（null=无自定义）
+    // get durability of block at pos (null=use default hardness)
     public Integer getDurability(BlockPos pos) {
         return durabilityMap.get(pos);
     }
 
-    // 删除坐标的自定义设置
-    public void removeDurability(BlockPos pos) {
+    // remove custom durability setting of block at pos
+    public boolean removeDurability(BlockPos pos) {
         BlockState blockState = level.getBlockState(pos);
         if (blockState == Blocks.AIR.defaultBlockState()) {
-            return;
+            return false;
         }
         durabilityMap.remove(pos);
         setDirty();
@@ -92,9 +93,10 @@ public class DurabilityDataManager extends SavedData {
         if (this.level != null) {
             NetworkHandler.syncRemoveToDimension(this.level, pos);
         }
+        return true;
     }
 
-    // 检查坐标是否为不可破坏
+    // check if block at pos is unbreakable
     public boolean isUnbreakable(BlockPos pos) {
         Integer durability = getDurability(pos);
         return durability != null && durability == -1;

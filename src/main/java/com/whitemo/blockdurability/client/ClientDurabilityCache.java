@@ -9,29 +9,29 @@ import java.util.Map;
 public class ClientDurabilityCache {
     private static final Map<BlockPos, Integer> CLIENT_DURABILITY_MAP = new HashMap<>();
 
-    // 全量更新数据
+    // global update
     public static void updateFullData(Map<BlockPos, Integer> data) {
         if (data == null) return;
         CLIENT_DURABILITY_MAP.clear();
         CLIENT_DURABILITY_MAP.putAll(data);
     }
 
-    // 更新单个方块
+    // Update single block durability
     public static void updateBlock(BlockPos pos, int durability) {
         CLIENT_DURABILITY_MAP.put(pos, durability);
     }
 
-    // 删除单个方块
+    // Remove single block from cache
     public static void removeBlock(BlockPos pos) {
         CLIENT_DURABILITY_MAP.remove(pos);
     }
 
-    // 获取所有缓存数据
+    // Get all cached durability data
     public static Map<BlockPos, Integer> getAllData() {
         return Collections.unmodifiableMap(CLIENT_DURABILITY_MAP);
     }
 
-    // 清空缓存（切换世界时调用）
+    // Clear cache when switching worlds
     public static void clear() {
         CLIENT_DURABILITY_MAP.clear();
     }

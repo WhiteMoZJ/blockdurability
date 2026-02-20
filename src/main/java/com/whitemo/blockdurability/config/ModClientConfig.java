@@ -33,23 +33,23 @@ public class ModClientConfig {
     static {
         BUILDER.push("Block Durability Visual Settings");
 
-        VISUAL_ENABLED = BUILDER.comment("可视化功能默认开关")
+        VISUAL_ENABLED = BUILDER.comment("blockdurability.config.visual_enabled")
                 .define("visual_enabled", true);
-        RENDER_RANGE = BUILDER.comment("可视化渲染范围（单位：格，最大64）")
+        RENDER_RANGE = BUILDER.comment("blockdurability.config.render_range")
                 .defineInRange("render_range", 16, 1, 64);
-        ONLY_SHOW_WITH_STICK = BUILDER.comment("仅手持木棍时显示可视化效果")
+        ONLY_SHOW_WITH_STICK = BUILDER.comment("blockdurability.config.only_show_with_stick")
                 .define("only_show_with_stick", false);
-        LINE_WIDTH = BUILDER.comment("高亮边框线宽")
+        LINE_WIDTH = BUILDER.comment("blockdurability.config.line_width")
                 .defineInRange("line_width", 2.0, 0.5, 10.0);
-        SEE_THROUGH_WALLS = BUILDER.comment("高亮是否穿墙可见")
+        SEE_THROUGH_WALLS = BUILDER.comment("blockdurability.config.see_through_walls")
                 .define("see_through_walls", true);
-        TEXT_SCALE = BUILDER.comment("耐久文本缩放大小")
+        TEXT_SCALE = BUILDER.comment("blockdurability.config.text_scale")
                 .defineInRange("text_scale", 0.025, 0.01, 0.1);
-        UNBREAKABLE_COLOR = BUILDER.comment("不可破坏方块高亮颜色（RGB）")
+        UNBREAKABLE_COLOR = BUILDER.comment("blockdurability.config.unbreakable_color")
                 .define("unbreakable_color", "255,0,0");
-        CUSTOM_DURABILITY_COLOR = BUILDER.comment("自定义耐久方块高亮颜色（RGB）")
+        CUSTOM_DURABILITY_COLOR = BUILDER.comment("blockdurability.config.custom_durability_color")
                 .define("custom_durability_color", "0,100,255");
-        SHOW_DURABILITY_TEXT = BUILDER.comment("是否在方块上方显示耐久文本")
+        SHOW_DURABILITY_TEXT = BUILDER.comment("blockdurability.config.show_durability_text")
                 .define("show_durability_text", true);
 
         BUILDER.pop();
@@ -58,13 +58,11 @@ public class ModClientConfig {
 
     public static int[] getColorArray(ForgeConfigSpec.ConfigValue<String> colorConfig) {
         try {
-            // 将 "r,g,b" 字符串解析为 int 数组
             return Arrays.stream(colorConfig.get().split(","))
                     .map(String::trim)
                     .mapToInt(Integer::parseInt)
                     .toArray();
         } catch (Exception e) {
-            // 解析失败时返回默认值
             return colorConfig == UNBREAKABLE_COLOR ? new int[]{255, 0, 0} : new int[]{0, 100, 255};
         }
     }
