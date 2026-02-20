@@ -17,7 +17,6 @@ public class BlockDurabilityMod {
     public BlockDurabilityMod() {
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
         MinecraftForge.EVENT_BUS.register(new BlockProtectEvents());
-
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ModClientConfig.SPEC);
         NetworkHandler.register();
     }

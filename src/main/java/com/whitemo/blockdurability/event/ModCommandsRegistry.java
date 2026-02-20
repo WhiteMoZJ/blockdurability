@@ -83,6 +83,73 @@ public class ModCommandsRegistry {
                                 })
                         )
                 )
+                // 对角线批量设置耐久：/bd set <pos1> <pos2> <耐久值>
+                .then(Commands.literal("set")
+                        .then(Commands.argument("pos1", BlockPosArgument.blockPos())
+                                .then(Commands.argument("pos2", BlockPosArgument.blockPos())
+                                        .then(Commands.argument("durability", IntegerArgumentType.integer(-1))
+                                                .executes(context -> {
+                                                    BlockPos pos1 = BlockPosArgument.getLoadedBlockPos(context, "pos1");
+                                                    BlockPos pos2 = BlockPosArgument.getLoadedBlockPos(context, "pos2");
+                                                    int durability = IntegerArgumentType.getInteger(context, "durability");
+                                                    ServerLevel level = context.getSource().getLevel();
+                                                    DurabilityDataManager data = DurabilityDataManager.get(level);
+                                                    int minX = Math.min(pos1.getX(), pos2.getX());
+                                                    int maxX = Math.max(pos1.getX(), pos2.getX());
+                                                    int minY = Math.min(pos1.getY(), pos2.getY());
+                                                    int maxY = Math.max(pos1.getY(), pos2.getY());
+                                                    int minZ = Math.min(pos1.getZ(), pos2.getZ());
+                                                    int maxZ = Math.max(pos1.getZ(), pos2.getZ());
+
+                                                    // 遍历选区内所有方块（高效遍历，避免卡顿）
+                                                    int count = 0;
+                                                    for (int x = minX; x <= maxX; x++) {
+                                                        for (int y = minY; y <= maxY; y++) {
+                                                            for (int z = minZ; z <= maxZ; z++) {
+                                                                BlockPos currentPos = new BlockPos(x, y, z);
+                                                                data.setDurability(currentPos, durability);
+                                                                count++;
+                                                            }
+                                                        }
+                                                    }
+                                                    return 1;
+                                                })
+                                        )
+                                )
+                        )
+                )
+                // 对角线批量删除耐久：/bd diagonal remove <pos1> <pos2>
+                .then(Commands.literal("remove")
+                        .then(Commands.argument("pos1", BlockPosArgument.blockPos())
+                                .then(Commands.argument("pos2", BlockPosArgument.blockPos())
+                                            .executes(context -> {
+                                                BlockPos pos1 = BlockPosArgument.getLoadedBlockPos(context, "pos1");
+                                                BlockPos pos2 = BlockPosArgument.getLoadedBlockPos(context, "pos2");
+                                                ServerLevel level = context.getSource().getLevel();
+                                                DurabilityDataManager data = DurabilityDataManager.get(level);
+                                                int minX = Math.min(pos1.getX(), pos2.getX());
+                                                int maxX = Math.max(pos1.getX(), pos2.getX());
+                                                int minY = Math.min(pos1.getY(), pos2.getY());
+                                                int maxY = Math.max(pos1.getY(), pos2.getY());
+                                                int minZ = Math.min(pos1.getZ(), pos2.getZ());
+                                                int maxZ = Math.max(pos1.getZ(), pos2.getZ());
+
+                                                // 遍历选区内所有方块（高效遍历，避免卡顿）
+                                                int count = 0;
+                                                for (int x = minX; x <= maxX; x++) {
+                                                    for (int y = minY; y <= maxY; y++) {
+                                                        for (int z = minZ; z <= maxZ; z++) {
+                                                            BlockPos currentPos = new BlockPos(x, y, z);
+                                                            data.removeDurability(currentPos);
+                                                            count++;
+                                                        }
+                                                    }
+                                                }
+                                                return 1;
+                                            })
+                                    )
+                            )
+                )
                 .then(Commands.literal("visual")
                         // 开关可视化
                         .then(Commands.literal("toggle")
@@ -126,9 +193,7 @@ public class ModCommandsRegistry {
                         )
                 )
                 .build();
-
         // 注册主指令和别名
-        event.getDispatcher().register(rootCommand.createBuilder());
         event.getDispatcher().register(Commands.literal(ALIAS_CMD).redirect(rootCommand));
     }
 }

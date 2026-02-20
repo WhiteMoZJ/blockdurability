@@ -2,10 +2,13 @@ package com.whitemo.blockdurability.event;
 
 import com.whitemo.blockdurability.BlockDurabilityMod;
 import com.whitemo.blockdurability.network.NetworkHandler;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 
@@ -60,6 +63,11 @@ public class DurabilityDataManager extends SavedData {
 
     // 设置坐标的耐久值
     public void setDurability(BlockPos pos, int durability) {
+        BlockState blockState = level.getBlockState(pos);
+        if (blockState == Blocks.AIR.defaultBlockState()) {
+            return;
+        }
+
         durabilityMap.put(pos, durability);
         setDirty(); // 标记需要保存
 
@@ -75,6 +83,10 @@ public class DurabilityDataManager extends SavedData {
 
     // 删除坐标的自定义设置
     public void removeDurability(BlockPos pos) {
+        BlockState blockState = level.getBlockState(pos);
+        if (blockState == Blocks.AIR.defaultBlockState()) {
+            return;
+        }
         durabilityMap.remove(pos);
         setDirty();
 
