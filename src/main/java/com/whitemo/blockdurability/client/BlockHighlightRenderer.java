@@ -10,7 +10,6 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.BlockState;
@@ -34,14 +33,9 @@ public class BlockHighlightRenderer {
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
         Minecraft mc = Minecraft.getInstance();
-//        if (mc.player != null && mc.player.tickCount % 20 == 0) { // 每20tick（1秒）打印一次，避免刷屏
-//            Map<BlockPos, Integer> protectData = ClientDurabilityCache.getAllData();
-//            // 向聊天框输出调试信息
-//            mc.player.sendSystemMessage(Component.literal("[调试] 渲染方法触发 | 保护方块数量：" + protectData.size()));
-//        }
 
         // 仅在实体渲染后执行，保证层级正确
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) return;
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
 
         Player player = mc.player;
         Camera camera = event.getCamera();
@@ -64,14 +58,12 @@ public class BlockHighlightRenderer {
         poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
 
         MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
-        VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.lines());
 
-        // 渲染状态设置（和原版完全对齐）
+        // 渲染状态设置
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableDepthTest();
         RenderSystem.lineWidth(lineWidth);
-        // 穿墙显示控制：开启则禁用深度测试，线框不会被方块挡住
         if (seeThroughWalls) {
             RenderSystem.disableDepthTest();
         }
@@ -108,7 +100,7 @@ public class BlockHighlightRenderer {
             float a = 0.9f;
 
             // 渲染线框
-            renderBlockOutline(poseStack, vertexConsumer, outlineBox, r, g, b, a);
+            // renderBlockOutline(poseStack, bufferSource, outlineBox, r, g, b, a);
 
             // 2. 渲染耐久悬浮文本
             if (ModClientConfig.SHOW_DURABILITY_TEXT.get()) {
@@ -161,52 +153,7 @@ public class BlockHighlightRenderer {
         poseStack.popPose();
     }
 
-    private static void renderBlockOutline(PoseStack poseStack, VertexConsumer consumer, AABB box, float r, float g, float b, float a) {
-        PoseStack.Pose pose = poseStack.last();
-        Matrix4f matrix = pose.pose();
-        Matrix3f normal = pose.normal();
+    // private static void renderBlockOutline(PoseStack poseStack, MultiBufferSource bufferSource, AABB box, float r, float g, float b, float a) {
 
-        // 立方体8个顶点坐标
-        double minX = box.minX;
-        double minY = box.minY;
-        double minZ = box.minZ;
-        double maxX = box.maxX;
-        double maxY = box.maxY;
-        double maxZ = box.maxZ;
-
-        // 渲染12条边（原版选中框的核心逻辑）
-        // 底部4条边
-        addLine(consumer, matrix, normal, minX, minY, minZ, maxX, minY, minZ, r, g, b, a);
-        addLine(consumer, matrix, normal, maxX, minY, minZ, maxX, minY, maxZ, r, g, b, a);
-        addLine(consumer, matrix, normal, maxX, minY, maxZ, minX, minY, maxZ, r, g, b, a);
-        addLine(consumer, matrix, normal, minX, minY, maxZ, minX, minY, minZ, r, g, b, a);
-
-        // 顶部4条边
-        addLine(consumer, matrix, normal, minX, maxY, minZ, maxX, maxY, minZ, r, g, b, a);
-        addLine(consumer, matrix, normal, maxX, maxY, minZ, maxX, maxY, maxZ, r, g, b, a);
-        addLine(consumer, matrix, normal, maxX, maxY, maxZ, minX, maxY, maxZ, r, g, b, a);
-        addLine(consumer, matrix, normal, minX, maxY, maxZ, minX, maxY, minZ, r, g, b, a);
-
-        // 垂直4条边
-        addLine(consumer, matrix, normal, minX, minY, minZ, minX, maxY, minZ, r, g, b, a);
-        addLine(consumer, matrix, normal, maxX, minY, minZ, maxX, maxY, minZ, r, g, b, a);
-        addLine(consumer, matrix, normal, maxX, minY, maxZ, maxX, maxY, maxZ, r, g, b, a);
-        addLine(consumer, matrix, normal, minX, minY, maxZ, minX, maxY, maxZ, r, g, b, a);
-    }
-
-    // 添加单条线的顶点数据（原版渲染的核心方法）
-    private static void addLine(VertexConsumer consumer, Matrix4f matrix, Matrix3f normal,
-                                double x1, double y1, double z1, double x2, double y2, double z2,
-                                float r, float g, float b, float a) {
-        // 第一个顶点
-        consumer.vertex(matrix, (float)x1, (float)y1, (float)z1)
-                .color(r, g, b, a)
-                .normal(normal, 0, 0, 0)
-                .endVertex();
-        // 第二个顶点
-        consumer.vertex(matrix, (float)x2, (float)y2, (float)z2)
-                .color(r, g, b, a)
-                .normal(normal, 0, 0, 0)
-                .endVertex();
-    }
+    // }
 }

@@ -30,22 +30,22 @@ public class NetworkHandler {
         CHANNEL.messageBuilder(FullSyncPacket.class, PACKET_ID++, NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(FullSyncPacket::encode)
                 .decoder(FullSyncPacket::new)
-                .consumerMainThread((packet, context) -> FullSyncPacket.handle(packet, (NetworkEvent.Context) context))
+                .consumerMainThread((packet, contextSupplier) -> FullSyncPacket.handle(packet, contextSupplier.get()))
                 .add();
 
         // 增量更新包（设置方块耐久时发送）
         CHANNEL.messageBuilder(UpdatePacket.class, PACKET_ID++, NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(UpdatePacket::encode)
                 .decoder(UpdatePacket::new)
-                .consumerMainThread((packet, context) -> UpdatePacket.handle(packet, (NetworkEvent.Context) context))
+                .consumerMainThread((packet, contextSupplier) -> UpdatePacket.handle(packet, contextSupplier.get()))
                 .add();
 
         // 删除包（移除方块设置时发送）
         CHANNEL.messageBuilder(RemovePacket.class, PACKET_ID++, NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(RemovePacket::encode)
                 .decoder(RemovePacket::new)
-                .consumerMainThread((packet, context) -> RemovePacket.handle(packet, (NetworkEvent.Context) context))
-                .add();
+                .consumerMainThread((packet, contextSupplier) -> RemovePacket.handle(packet, contextSupplier.get()))
+                .add();    
     }
 
     // 全量同步给指定玩家
@@ -74,11 +74,23 @@ public class NetworkHandler {
         }
 
         public FullSyncPacket(net.minecraft.network.FriendlyByteBuf buf) {
-            this(buf.readMap(net.minecraft.network.FriendlyByteBuf::readBlockPos, net.minecraft.network.FriendlyByteBuf::readInt));
+            this(decodeDurabilityMap(buf));
+        }
+
+        private static Map<BlockPos, Integer> decodeDurabilityMap(net.minecraft.network.FriendlyByteBuf buf) {
+            int size = buf.readInt();
+            Map<BlockPos, Integer> map = new java.util.HashMap<>();
+            for (int i = 0; i < size; i++) {
+                BlockPos pos = buf.readBlockPos();
+                int durability = buf.readInt();
+                map.put(pos, durability);
+            }
+            return map;
         }
 
         public static boolean handle(FullSyncPacket packet, net.minecraftforge.network.NetworkEvent.Context context) {
             context.enqueueWork(() -> ClientDurabilityCache.updateFullData(packet.durabilityMap));
+            context.setPacketHandled(true);
             return true;
         }
     }
@@ -96,6 +108,7 @@ public class NetworkHandler {
 
         public static boolean handle(UpdatePacket packet, net.minecraftforge.network.NetworkEvent.Context context) {
             context.enqueueWork(() -> ClientDurabilityCache.updateBlock(packet.pos, packet.durability));
+            context.setPacketHandled(true);
             return true;
         }
     }
@@ -112,6 +125,7 @@ public class NetworkHandler {
 
         public static boolean handle(RemovePacket packet, net.minecraftforge.network.NetworkEvent.Context context) {
             context.enqueueWork(() -> ClientDurabilityCache.removeBlock(packet.pos));
+            context.setPacketHandled(true);
             return true;
         }
     }

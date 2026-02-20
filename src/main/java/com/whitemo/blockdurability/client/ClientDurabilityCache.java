@@ -11,9 +11,7 @@ public class ClientDurabilityCache {
 
     // 全量更新数据
     public static void updateFullData(Map<BlockPos, Integer> data) {
-        if (data == null) {
-            return;
-        }
+        if (data == null) return;
         CLIENT_DURABILITY_MAP.clear();
         CLIENT_DURABILITY_MAP.putAll(data);
     }

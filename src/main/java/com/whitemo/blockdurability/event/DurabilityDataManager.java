@@ -2,7 +2,6 @@ package com.whitemo.blockdurability.event;
 
 import com.whitemo.blockdurability.BlockDurabilityMod;
 import com.whitemo.blockdurability.network.NetworkHandler;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
