@@ -7,7 +7,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
@@ -61,6 +60,16 @@ public class NetworkHandler {
     // 同步删除给维度内所有玩家
     public static void syncRemoveToDimension(ServerLevel level, BlockPos pos) {
         CHANNEL.send(PacketDistributor.DIMENSION.with(level::dimension), new RemovePacket(pos));
+    }
+
+    // 增量同步给所有玩家
+    public static void syncUpdateToAll(ServerLevel level, BlockPos pos, int durability) {
+        CHANNEL.send(PacketDistributor.ALL.noArg(), new UpdatePacket(pos, durability));
+    }
+
+    // 同步删除给所有玩家
+    public static void syncRemoveToAll(ServerLevel level, BlockPos pos) {
+        CHANNEL.send(PacketDistributor.ALL.noArg(), new RemovePacket(pos));
     }
 
     // 全量同步包定义

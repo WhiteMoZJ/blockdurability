@@ -1,5 +1,6 @@
 package com.whitemo.blockdurability.event;
 
+import com.mojang.logging.LogUtils;
 import com.whitemo.blockdurability.BlockDurabilityMod;
 import com.whitemo.blockdurability.client.ClientDurabilityCache;
 import com.whitemo.blockdurability.network.NetworkHandler;
@@ -14,23 +15,25 @@ import net.minecraftforge.event.level.ExplosionEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
+import org.slf4j.Logger;
 
 import java.util.Objects;
 
 @Mod.EventBusSubscriber(modid = BlockDurabilityMod.MOD_ID)
 public class BlockProtectEvents {
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     // block break event
     @SubscribeEvent
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
-        if (event.getLevel().isClientSide()) return; // 仅服务端处理
+        if (event.getLevel().isClientSide()) return; // only server side processing
 
         ServerLevel level = (ServerLevel) event.getLevel();
         BlockPos pos = event.getPos();
         DurabilityDataManager data = DurabilityDataManager.get(level);
         Player player = event.getPlayer();
 
-        // available player creative mode block break event
+        // allow creative mode player to break blocks and remove custom durability
         if (player != null && player.isCreative()) {
             if (data.getDurability(pos) != null) {
                 data.removeDurability(pos);
@@ -38,39 +41,18 @@ public class BlockProtectEvents {
             return;
         }
 
+        Integer durability = data.getDurability(pos);
+        if (durability == null) return; // no custom durability, use vanilla behavior
+
         // unbreakable block break event
-        if (data.isUnbreakable(pos)) {
+        if (durability == -1) {
             event.setCanceled(true);
             return;
         }
 
-        // optional: remove custom durability after block break
-        Integer durability = data.getDurability(pos);
-        if (durability != null && !event.isCanceled()) {
+        // remove custom durability after block break
+        if (!event.isCanceled()) {
             data.removeDurability(pos);
-        }
-    }
-
-    @SubscribeEvent
-    public static void onBreakSpeed(PlayerEvent.BreakSpeed event) {
-        if (event.getEntity().level().isClientSide()) return;
-
-        ServerLevel level = (ServerLevel) event.getEntity().level();
-        BlockPos pos = event.getPosition().get();
-        DurabilityDataManager data = DurabilityDataManager.get(level);
-        Integer customDurability = data.getDurability(pos);
-
-        if (customDurability == null) return;
-
-        if (customDurability == -1) {
-            event.setNewSpeed(0);
-            return;
-        }
-
-        float originalHardness = event.getState().getDestroySpeed(level, pos);
-        if (originalHardness > 0) {
-            float newSpeed = event.getOriginalSpeed() * (originalHardness / customDurability);
-            event.setNewSpeed(newSpeed);
         }
     }
 

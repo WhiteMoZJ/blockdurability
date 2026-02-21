@@ -7,6 +7,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +17,10 @@ import java.util.Map;
 
 public class DurabilityDataManager extends SavedData {
     private static final String DATA_NAME = BlockDurabilityMod.MOD_ID + "_block_data";
+    private static final String DURABILITY_TAG = "BlockDurability";
+    
     // core data: pos -> durability (-1=unbreakable, null=use default hardness)
+    // only used for blocks without BlockEntity
     private static final Map<BlockPos, Integer> durabilityMap = new HashMap<>();
 
     // get instance of current world
@@ -67,8 +71,17 @@ public class DurabilityDataManager extends SavedData {
             return false;
         }
 
-        durabilityMap.put(pos, durability);
-        setDirty();
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (blockEntity != null) {
+            // store in BlockEntity NBT
+            CompoundTag tag = blockEntity.getPersistentData();
+            tag.putInt(DURABILITY_TAG, durability);
+            blockEntity.setChanged();
+        } else {
+            // store in map for blocks without BlockEntity
+            durabilityMap.put(pos, durability);
+            setDirty();
+        }
 
         if (this.level != null) {
             NetworkHandler.syncUpdateToDimension(this.level, pos, durability);
@@ -78,6 +91,15 @@ public class DurabilityDataManager extends SavedData {
 
     // get durability of block at pos (null=use default hardness)
     public Integer getDurability(BlockPos pos) {
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (blockEntity != null) {
+            // read from BlockEntity NBT
+            CompoundTag tag = blockEntity.getPersistentData();
+            if (tag.contains(DURABILITY_TAG)) {
+                return tag.getInt(DURABILITY_TAG);
+            }
+        }
+        // read from map for blocks without BlockEntity
         return durabilityMap.get(pos);
     }
 
@@ -87,8 +109,18 @@ public class DurabilityDataManager extends SavedData {
         if (blockState == Blocks.AIR.defaultBlockState()) {
             return false;
         }
-        durabilityMap.remove(pos);
-        setDirty();
+
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (blockEntity != null) {
+            // remove from BlockEntity NBT
+            CompoundTag tag = blockEntity.getPersistentData();
+            tag.remove(DURABILITY_TAG);
+            blockEntity.setChanged();
+        } else {
+            // remove from map for blocks without BlockEntity
+            durabilityMap.remove(pos);
+            setDirty();
+        }
 
         if (this.level != null) {
             NetworkHandler.syncRemoveToDimension(this.level, pos);
@@ -102,7 +134,9 @@ public class DurabilityDataManager extends SavedData {
         return durability != null && durability == -1;
     }
 
+    // get all durability data (for syncing)
+    // Note: only returns data from the map, BlockEntity data is read on-demand
     public Map<BlockPos, Integer> getAllDurabilityData() {
-        return durabilityMap;
+        return new HashMap<>(durabilityMap);
     }
 }
