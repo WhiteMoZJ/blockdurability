@@ -1,8 +1,11 @@
 {
   "command.blockdurability.set.success": "Set durability for position [%s, %s, %s] to %s",
   "command.blockdurability.set.unbreakable": "Set position [%s, %s, %s] to unbreakable",
-  "command.blockdurability.set.unbreakable.area": "Set area from [%s, %s, %s] to [%s, %s, %s] to unbreakable (%s blocks)",
-  "command.blockdurability.set.custom.area": "Set area from [%s, %s, %s] to [%s, %s, %s] durability to %s (%s blocks)",
+  "command.blockdurability.set.area.unbreakable": "Set area from [%s, %s, %s] to [%s, %s, %s] to unbreakable (%s blocks)",
+  "command.blockdurability.set.area.custom": "Set area from [%s, %s, %s] to [%s, %s, %s] durability to %s (%s blocks)",
+  "command.blockdurability.set.failed": "Failed to set custom durability setting for position [%s, %s, %s]",
+  "command.blockdurability.we.set.failed": "Failed to get session from World Edit",
+  "command.blockdurability.we.remove.failed": "Failed to get session from World Edit",
   "command.blockdurability.remove.success": "Removed custom durability setting for position [%s, %s, %s]",
   "command.blockdurability.remove.area.success": "Removed custom durability settings for area from [%s, %s, %s] to [%s, %s, %s] (%s blocks)",
   "command.blockdurability.remove.failed": "Failed to remove custom durability setting for position [%s, %s, %s]",

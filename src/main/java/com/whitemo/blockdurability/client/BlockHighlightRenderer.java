@@ -3,7 +3,7 @@ package com.whitemo.blockdurability.client;
 import com.whitemo.blockdurability.BlockDurabilityMod;
 import com.whitemo.blockdurability.config.ModClientConfig;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;

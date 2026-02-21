@@ -11,23 +11,23 @@ public class ModClientConfig {
     public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
     public static final ForgeConfigSpec SPEC;
 
-    // 可视化总开关
+    // visibility switch
     public static final ForgeConfigSpec.BooleanValue VISUAL_ENABLED;
-    // 渲染范围（格）
+    // rendering range
     public static final ForgeConfigSpec.IntValue RENDER_RANGE;
-    // 仅手持木棍时显示
+    // only show with stick
     public static final ForgeConfigSpec.BooleanValue ONLY_SHOW_WITH_STICK;
-    // 高亮线宽
+    // highlight line width
     public static final ForgeConfigSpec.DoubleValue LINE_WIDTH;
-    // 穿墙显示
+    // see through wall
     public static final ForgeConfigSpec.BooleanValue SEE_THROUGH_WALLS;
-    // 文本大小
+    // text font size
     public static final ForgeConfigSpec.DoubleValue TEXT_SCALE;
-    // 不可破坏方块颜色（RGB）
+    // unbreakable color （RGB）
     public static final ForgeConfigSpec.ConfigValue<String> UNBREAKABLE_COLOR;
-    // 自定义耐久方块颜色（RGB）
+    // custom durability color（RGB）
     public static final ForgeConfigSpec.ConfigValue<String> CUSTOM_DURABILITY_COLOR;
-    // 显示耐久文本
+    // show text
     public static final ForgeConfigSpec.BooleanValue SHOW_DURABILITY_TEXT;
 
     static {

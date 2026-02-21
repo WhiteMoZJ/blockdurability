@@ -25,21 +25,21 @@ public class NetworkHandler {
     private static int PACKET_ID = 0;
 
     public static void register() {
-        // 全量同步包（进入世界/切换维度时发送）
+        // full sync packet (Sent upon entering the world/switching dimensions)
         CHANNEL.messageBuilder(FullSyncPacket.class, PACKET_ID++, NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(FullSyncPacket::encode)
                 .decoder(FullSyncPacket::new)
                 .consumerMainThread((packet, contextSupplier) -> FullSyncPacket.handle(packet, contextSupplier.get()))
                 .add();
 
-        // 增量更新包（设置方块耐久时发送）
+        // update packet (sent when setting block durability)
         CHANNEL.messageBuilder(UpdatePacket.class, PACKET_ID++, NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(UpdatePacket::encode)
                 .decoder(UpdatePacket::new)
                 .consumerMainThread((packet, contextSupplier) -> UpdatePacket.handle(packet, contextSupplier.get()))
                 .add();
 
-        // 删除包（移除方块设置时发送）
+        // remove packet (sent when removing block settings)
         CHANNEL.messageBuilder(RemovePacket.class, PACKET_ID++, NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(RemovePacket::encode)
                 .decoder(RemovePacket::new)
@@ -47,32 +47,22 @@ public class NetworkHandler {
                 .add();    
     }
 
-    // 全量同步给指定玩家
+    // full sync  for specified players
     public static void syncFullDataToPlayer(ServerPlayer player, Map<BlockPos, Integer> data) {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new FullSyncPacket(data));
     }
 
-    // 增量同步给维度内所有玩家
+    // update for all player
     public static void syncUpdateToDimension(ServerLevel level, BlockPos pos, int durability) {
         CHANNEL.send(PacketDistributor.DIMENSION.with(level::dimension), new UpdatePacket(pos, durability));
     }
 
-    // 同步删除给维度内所有玩家
+    // sync remove for all player
     public static void syncRemoveToDimension(ServerLevel level, BlockPos pos) {
         CHANNEL.send(PacketDistributor.DIMENSION.with(level::dimension), new RemovePacket(pos));
     }
 
-    // 增量同步给所有玩家
-    public static void syncUpdateToAll(ServerLevel level, BlockPos pos, int durability) {
-        CHANNEL.send(PacketDistributor.ALL.noArg(), new UpdatePacket(pos, durability));
-    }
-
-    // 同步删除给所有玩家
-    public static void syncRemoveToAll(ServerLevel level, BlockPos pos) {
-        CHANNEL.send(PacketDistributor.ALL.noArg(), new RemovePacket(pos));
-    }
-
-    // 全量同步包定义
+    // custom full sync packet
     public record FullSyncPacket(Map<BlockPos, Integer> durabilityMap) {
         public void encode(net.minecraft.network.FriendlyByteBuf buf) {
             buf.writeInt(durabilityMap.size());
@@ -104,7 +94,7 @@ public class NetworkHandler {
         }
     }
 
-    // 增量更新包定义
+    // custom update packet
     public record UpdatePacket(BlockPos pos, int durability) {
         public void encode(net.minecraft.network.FriendlyByteBuf buf) {
             buf.writeBlockPos(pos);
@@ -122,7 +112,7 @@ public class NetworkHandler {
         }
     }
 
-    // 删除包定义
+    // custom remove packet
     public record RemovePacket(BlockPos pos) {
         public void encode(net.minecraft.network.FriendlyByteBuf buf) {
             buf.writeBlockPos(pos);
