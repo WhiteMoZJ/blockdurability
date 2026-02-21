@@ -1,7 +1,7 @@
 {
   "command.blockdurability.set.success": "Set durability for position [%s, %s, %s] to %s",
   "command.blockdurability.set.unbreakable": "Set position [%s, %s, %s] to unbreakable",
-  "command.blockdurability.set.area.unbreakable": "Set area from [%s, %s, %s] to [%s, %s, %s] to unbreakable (%s blocks)",
+  "command.blockdurability.set.area.unbreakable": "Set area from [%s, %s, %s] to [%s, %s, %s] to unbreakable(%s) (%s blocks)",
   "command.blockdurability.set.area.custom": "Set area from [%s, %s, %s] to [%s, %s, %s] durability to %s (%s blocks)",
   "command.blockdurability.set.failed": "Failed to set custom durability setting for position [%s, %s, %s]",
   "command.blockdurability.we.set.failed": "Failed to get session from World Edit",

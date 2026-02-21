@@ -1,7 +1,7 @@
 {
   "command.blockdurability.set.success": "已设置坐标 [%s, %s, %s] 的方块耐久为 %s",
   "command.blockdurability.set.unbreakable": "已设置坐标 [%s, %s, %s] 为不可破坏",
-  "command.blockdurability.set.area.unbreakable": "已设置区域 [%s, %s, %s] 到 [%s, %s, %s] 为不可破坏（共 %s 个方块）",
+  "command.blockdurability.set.area.unbreakable": "已设置区域 [%s, %s, %s] 到 [%s, %s, %s] 为不可破坏(%s)（共 %s 个方块）",
   "command.blockdurability.set.area.custom": "已设置区域 [%s, %s, %s] 到 [%s, %s, %s] 的方块耐久为 %s（共 %s 个方块）",
   "command.blockdurability.set.failed": "坐标 [%s, %s, %s] 的自定义耐久设置失败",
   "command.blockdurability.we.set.failed": "未能从World Edit中获取区域",
