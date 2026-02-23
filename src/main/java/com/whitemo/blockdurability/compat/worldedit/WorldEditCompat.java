@@ -40,12 +40,14 @@ public class WorldEditCompat {
             if (region == null) {
                 return new BlockPos[0];
             }
-            BlockVector3 min = region.getMinimumPoint();
-            BlockVector3 max = region.getMaximumPoint();
-            return new BlockPos[] {
-                new BlockPos(min.getX(), min.getY(), min.getZ()),
-                new BlockPos(max.getX(), max.getY(), max.getZ())
-            };
+
+            BlockPos[] poses = new BlockPos[Math.toIntExact(region.getVolume())];
+            int i = 0;
+            for (BlockVector3 pos : region) {
+                poses[i] = new BlockPos(pos.getBlockX(), pos.getBlockY(), pos.getBlockZ());
+                i++;
+            }
+            return poses;
         } catch (Exception e) {
             return new BlockPos[0];
         }

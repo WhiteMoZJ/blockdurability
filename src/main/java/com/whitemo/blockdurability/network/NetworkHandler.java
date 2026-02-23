@@ -6,6 +6,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
@@ -13,33 +16,37 @@ import net.minecraftforge.network.simple.SimpleChannel;
 
 import java.util.Map;
 
+@Mod.EventBusSubscriber(modid = BlockDurabilityMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class NetworkHandler {
     private static final String PROTOCOL_VERSION = "1";
-    public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation(BlockDurabilityMod.MOD_ID, "network"),
-            () -> PROTOCOL_VERSION,
-            PROTOCOL_VERSION::equals,
-            PROTOCOL_VERSION::equals
-    );
-
+    private static SimpleChannel CHANNEL;
     private static int PACKET_ID = 0;
 
-    public static void register() {
-        // full sync packet (Sent upon entering the world/switching dimensions)
+    @SubscribeEvent
+    public static void onCommonSetup(FMLCommonSetupEvent event) {
+        CHANNEL = NetworkRegistry.newSimpleChannel(
+                new ResourceLocation(BlockDurabilityMod.MOD_ID, "network"),
+                () -> PROTOCOL_VERSION,
+                PROTOCOL_VERSION::equals,
+                PROTOCOL_VERSION::equals
+        );
+        
+        registerPackets();
+    }
+
+    private static void registerPackets() {
         CHANNEL.messageBuilder(FullSyncPacket.class, PACKET_ID++, NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(FullSyncPacket::encode)
                 .decoder(FullSyncPacket::new)
                 .consumerMainThread((packet, contextSupplier) -> FullSyncPacket.handle(packet, contextSupplier.get()))
                 .add();
 
-        // update packet (sent when setting block durability)
         CHANNEL.messageBuilder(UpdatePacket.class, PACKET_ID++, NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(UpdatePacket::encode)
                 .decoder(UpdatePacket::new)
                 .consumerMainThread((packet, contextSupplier) -> UpdatePacket.handle(packet, contextSupplier.get()))
                 .add();
 
-        // remove packet (sent when removing block settings)
         CHANNEL.messageBuilder(RemovePacket.class, PACKET_ID++, NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(RemovePacket::encode)
                 .decoder(RemovePacket::new)
@@ -47,22 +54,21 @@ public class NetworkHandler {
                 .add();    
     }
 
-    // full sync  for specified players
     public static void syncFullDataToPlayer(ServerPlayer player, Map<BlockPos, Integer> data) {
+        if (CHANNEL == null) return;
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new FullSyncPacket(data));
     }
 
-    // update for all player
     public static void syncUpdateToDimension(ServerLevel level, BlockPos pos, int durability) {
+        if (CHANNEL == null) return;
         CHANNEL.send(PacketDistributor.DIMENSION.with(level::dimension), new UpdatePacket(pos, durability));
     }
 
-    // sync remove for all player
     public static void syncRemoveToDimension(ServerLevel level, BlockPos pos) {
+        if (CHANNEL == null) return;
         CHANNEL.send(PacketDistributor.DIMENSION.with(level::dimension), new RemovePacket(pos));
     }
 
-    // custom full sync packet
     public record FullSyncPacket(Map<BlockPos, Integer> durabilityMap) {
         public void encode(net.minecraft.network.FriendlyByteBuf buf) {
             buf.writeInt(durabilityMap.size());
@@ -94,7 +100,6 @@ public class NetworkHandler {
         }
     }
 
-    // custom update packet
     public record UpdatePacket(BlockPos pos, int durability) {
         public void encode(net.minecraft.network.FriendlyByteBuf buf) {
             buf.writeBlockPos(pos);
@@ -112,7 +117,6 @@ public class NetworkHandler {
         }
     }
 
-    // custom remove packet
     public record RemovePacket(BlockPos pos) {
         public void encode(net.minecraft.network.FriendlyByteBuf buf) {
             buf.writeBlockPos(pos);

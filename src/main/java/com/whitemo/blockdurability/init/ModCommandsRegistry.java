@@ -136,7 +136,7 @@ public class ModCommandsRegistry {
                                                             ? "command.blockdurability.set.area.unbreakable"
                                                             : "command.blockdurability.set.area.custom";
                                                     context.getSource().sendSuccess(() -> Component.translatable(
-                                                            key, pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ(), durability, count[0]
+                                                            key, pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ(), count[0], durability
                                                     ), true);
                                                     return 1;
                                                 })
@@ -235,36 +235,23 @@ public class ModCommandsRegistry {
                                         BlockPos[] pos = WorldEditCompat.getRegionCorners(player);
 
                                         if (pos == null || pos.length < 2) {
-                                            String key = "command.blockdurability.we.set.failed";
+                                            String key = "command.blockdurability.we.failed";
                                             context.getSource().sendFailure(Component.translatable(key));
                                         } else {
-                                            BlockPos pos1 = pos[0];
-                                            BlockPos pos2 = pos[1];
                                             int durability = IntegerArgumentType.getInteger(context, "durability");
                                             ServerLevel level = context.getSource().getLevel();
                                             DurabilityDataManager data = DurabilityDataManager.get(level);
-                                            int minX = Math.min(pos1.getX(), pos2.getX());
-                                            int maxX = Math.max(pos1.getX(), pos2.getX());
-                                            int minY = Math.min(pos1.getY(), pos2.getY());
-                                            int maxY = Math.max(pos1.getY(), pos2.getY());
-                                            int minZ = Math.min(pos1.getZ(), pos2.getZ());
-                                            int maxZ = Math.max(pos1.getZ(), pos2.getZ());
                                             final int[] count = {0};
-                                            for (int x = minX; x <= maxX; x++) {
-                                                for (int y = minY; y <= maxY; y++) {
-                                                    for (int z = minZ; z <= maxZ; z++) {
-                                                        BlockPos currentPos = new BlockPos(x, y, z);
-                                                        if (data.setDurability(currentPos, durability)) {
-                                                            count[0]++;
-                                                        }
-                                                    }
+                                            for (BlockPos currentPos : pos) {
+                                                if (data.setDurability(currentPos, durability)) {
+                                                    count[0]++;
                                                 }
                                             }
                                             String key = durability == -1
-                                                    ? "command.blockdurability.set.area.unbreakable"
-                                                    : "command.blockdurability.set.area.custom";
+                                                    ? "command.blockdurability.we.set.area.unbreakable"
+                                                    : "command.blockdurability.we.set.area.custom";
                                             context.getSource().sendSuccess(() -> Component.translatable(
-                                                    key, pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ(), durability, count[0]
+                                                    key, count[0], durability
                                             ), true);
                                         }
                                         return 1;
@@ -277,32 +264,19 @@ public class ModCommandsRegistry {
                                 BlockPos[] pos = WorldEditCompat.getRegionCorners(player);
 
                                 if (pos == null || pos.length < 2) {
-                                    String key = "command.blockdurability.we.remove.failed";
+                                    String key = "command.blockdurability.we.failed";
                                     context.getSource().sendFailure(Component.translatable(key));
                                 } else {
-                                    BlockPos pos1 = pos[0];
-                                    BlockPos pos2 = pos[1];
                                     ServerLevel level = context.getSource().getLevel();
                                     DurabilityDataManager data = DurabilityDataManager.get(level);
-                                    int minX = Math.min(pos1.getX(), pos2.getX());
-                                    int maxX = Math.max(pos1.getX(), pos2.getX());
-                                    int minY = Math.min(pos1.getY(), pos2.getY());
-                                    int maxY = Math.max(pos1.getY(), pos2.getY());
-                                    int minZ = Math.min(pos1.getZ(), pos2.getZ());
-                                    int maxZ = Math.max(pos1.getZ(), pos2.getZ());
                                     final int[] count = {0};
-                                    for (int x = minX; x <= maxX; x++) {
-                                        for (int y = minY; y <= maxY; y++) {
-                                            for (int z = minZ; z <= maxZ; z++) {
-                                                BlockPos currentPos = new BlockPos(x, y, z);
-                                                if (data.removeDurability(currentPos)) {
-                                                    count[0]++;
-                                                }
-                                            }
+                                    for (BlockPos currentPos : pos) {
+                                        if (data.removeDurability(currentPos)) {
+                                            count[0]++;
                                         }
                                     }
                                     context.getSource().sendSuccess(() -> Component.translatable(
-                                            "command.blockdurability.remove.area.success", pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ(), count[0]
+                                            "command.blockdurability.we.remove.area.success", count[0]
                                     ), true);
                                 }
                                 return 1;

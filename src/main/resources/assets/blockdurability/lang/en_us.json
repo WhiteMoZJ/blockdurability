@@ -1,11 +1,10 @@
 {
   "command.blockdurability.set.success": "Set durability for position [%s, %s, %s] to %s",
   "command.blockdurability.set.unbreakable": "Set position [%s, %s, %s] to unbreakable",
-  "command.blockdurability.set.area.unbreakable": "Set area from [%s, %s, %s] to [%s, %s, %s] to unbreakable(%s) (%s blocks)",
-  "command.blockdurability.set.area.custom": "Set area from [%s, %s, %s] to [%s, %s, %s] durability to %s (%s blocks)",
+  "command.blockdurability.set.area.unbreakable": "Set area from [%s, %s, %s] to [%s, %s, %s](%s blocks) to unbreakable(%s)",
+  "command.blockdurability.set.area.custom": "Set area from [%s, %s, %s] to [%s, %s, %s](%s blocks) durability to %s",
   "command.blockdurability.set.failed": "Failed to set custom durability setting for position [%s, %s, %s]",
-  "command.blockdurability.we.set.failed": "Failed to get session from World Edit",
-  "command.blockdurability.we.remove.failed": "Failed to get session from World Edit",
+  "command.blockdurability.we.failed": "Failed to get session from World Edit",
   "command.blockdurability.remove.success": "Removed custom durability setting for position [%s, %s, %s]",
   "command.blockdurability.remove.area.success": "Removed custom durability settings for area from [%s, %s, %s] to [%s, %s, %s] (%s blocks)",
   "command.blockdurability.remove.failed": "Failed to remove custom durability setting for position [%s, %s, %s]",
@@ -27,5 +26,8 @@
   "blockdurability.config.text_scale": "Durability text scale size",
   "blockdurability.config.unbreakable_color": "Unbreakable block highlight color (RGB)",
   "blockdurability.config.custom_durability_color": "Custom durability block highlight color (RGB)",
-  "blockdurability.config.show_durability_text": "Whether to display durability text above blocks"
+  "blockdurability.config.show_durability_text": "Whether to display durability text above blocks",
+  "command.blockdurability.we.set.area.unbreakable": "Set area (%s blocks) to unbreakable",
+  "command.blockdurability.we.set.area.custom": "Set area (%s blocks) durability to %s",
+  "command.blockdurability.we.remove.area.success": "Removed custom durability settings for area (%s blocks)"
 }
